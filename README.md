@@ -1,8 +1,8 @@
 # Команда
 
-1. Александра Григорьева - developer
-2. Варвара Гребенщикова - developer
-3. Воробжанский Егор - team lead
+1. Александра Григорьева(OtterAlexandra) - developer
+2. Варвара Гребенщикова(varenik17) - developer
+3. Воробжанский Егор(deccemchef) - team lead
 
 
 # Взаимодействие с пользователем
