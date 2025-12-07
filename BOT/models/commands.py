@@ -3,6 +3,8 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart, Command
 from constants import text_start, text_help, text_no_fav
 import models.keyboards as kb
+from models.requests import memes_start
+from aiogram.fsm.context import FSMContext
 
 router = Router()
 
@@ -70,8 +72,8 @@ async def btn_help_keyboard(message: Message):
 
 
 @router.message(F.text == 'Найти мем')
-async def btn_find_meme(message: Message):
-    await memes_start(message)
+async def btn_find_meme(message: Message, state: FSMContext):
+    await memes_start(message, state)
 
 @router.message(F.text == 'Избранное')
 async def btn_fav_keyboard(message: Message):
