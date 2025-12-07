@@ -2,6 +2,7 @@ from aiogram import F, Router
 from aiogram.types import Message
 from aiogram.filters import CommandStart, Command
 from constants import text_start, text_help, text_no_fav
+import models.keyboards as kb
 
 router = Router()
 
@@ -32,7 +33,7 @@ async def cmd_start(message: Message):
 
     ensure_user_exists(tg_id, username)
 
-    await message.answer(text_start)
+    await message.answer(text_start, reply_markup=kb.main)
 
 
 @router.message(Command('help'))
@@ -61,3 +62,17 @@ async def cmd_favourites(message: Message):
             photo=file_id,
             caption=caption
         )
+
+
+@router.message(F.text == 'Помощь')
+async def btn_help_keyboard(message: Message):
+    await cmd_help(message)
+
+
+@router.message(F.text == 'Найти мем')
+async def btn_find_meme(message: Message):
+    await memes_start(message)
+
+@router.message(F.text == 'Избранное')
+async def btn_fav_keyboard(message: Message):
+    await cmd_favourites(message)
