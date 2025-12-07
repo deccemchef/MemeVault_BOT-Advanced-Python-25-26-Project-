@@ -1,14 +1,38 @@
 from aiogram import F, Router
 from aiogram.types import Message
 from aiogram.filters import CommandStart, Command
-from constants import text_start, text_help
+from constants import text_start, text_help, text_no_fav
 import models.keyboards as kb
 
 router = Router()
 
 
+def db_get_user(tg_id: int):
+    return None
+
+
+def db_create_user(tg_id: int, username: str | None):
+    pass
+
+
+def db_get_user_favourites(tg_id: int):
+    return []
+
+
+# ее вызываем 2 раза, или в start, или в memes
+def ensure_user_exists(tg_id: int, username: str | None):
+    user = db_get_user(tg_id)
+    if not user:
+        db_create_user(tg_id, username)
+
+
 @router.message(CommandStart())
 async def cmd_start(message: Message):
+    tg_id = message.from_user.id
+    username = message.from_user.username
+
+    ensure_user_exists(tg_id, username)
+
     await message.answer(text_start, reply_markup=kb.main)
 
 
@@ -17,13 +41,27 @@ async def cmd_help(message: Message):
     await message.answer(text_help)
 
 
-@router.message(Command('memes'))
-async def cmd_memes(message: Message):
-    await message.answer('Введите тэг мема')
-
 @router.message(Command('favourites'))
-async def cmd_fav(message: Message):
-    await message.answer('Вы зашли в избранное')
+async def cmd_favourites(message: Message):
+    tg_id = message.from_user.id
+    username = message.from_user.username
+
+    ensure_user_exists(tg_id, username)
+
+    favourites = db_get_user_favourites(tg_id)
+
+    if not favourites:
+        await message.answer(text_no_fav)
+        return
+
+    for fav in favourites:
+        file_id = fav.get("file_id")
+        caption = fav.get("caption") or "Из избранного"
+
+        await message.answer_photo(
+            photo=file_id,
+            caption=caption
+        )
 
 
 @router.message(F.text == 'Помощь')
@@ -33,8 +71,8 @@ async def btn_help_keyboard(message: Message):
 
 @router.message(F.text == 'Найти мем')
 async def btn_find_meme(message: Message):
-    await cmd_memes(message)
+    await memes_start(message)
 
 @router.message(F.text == 'Избранное')
 async def btn_fav_keyboard(message: Message):
-    await cmd_fav(message)
+    await cmd_favourites(message)
