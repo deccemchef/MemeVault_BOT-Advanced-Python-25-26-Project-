@@ -4,12 +4,14 @@ from aiogram.types import Message
 
 
 from models.commands import router
+from models.requests import router as requests_router
 
 
 async def main():
     bot = Bot(token='8422146276:AAE7uckmXcNnnTCEbSS_oWl06xJXHZy748g')
     dp = Dispatcher()
     dp.include_router(router)
+    dp.include_router(requests_router)
     await dp.start_polling(bot)
 
 
