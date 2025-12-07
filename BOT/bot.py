@@ -2,18 +2,14 @@ import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 
-# Создаём экземпляры бота и диспетчера
-bot = Bot(token='8422146276:AAE7uckmXcNnnTCEbSS_oWl06xJXHZy748g')
-dp = Dispatcher()
 
-
-@dp.message()
-async def cmd_start(message: Message):
-    await message.answer("Привет!")
-    await message.reply("Как дела?")
+from models.commands import router
 
 
 async def main():
+    bot = Bot(token='8422146276:AAE7uckmXcNnnTCEbSS_oWl06xJXHZy748g')
+    dp = Dispatcher()
+    dp.include_router(router)
     await dp.start_polling(bot)
 
 
