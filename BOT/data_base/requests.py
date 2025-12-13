@@ -6,20 +6,12 @@ from sqlalchemy.exc import IntegrityError
 from data_base.models import async_session, User, Favorite, Meme
 
 
-async def db_get_user_by_tg_id(tg_id: int) -> Optional[User]:
+async def ensure_user_exists(tg_id: int, username: str | None = None) -> None:
     async with async_session() as session:
-        return await session.scalar(
-            select(User).where(User.telegram_id == tg_id)
+        user_id = await session.scalar(
+            select(User.user_id).where(User.telegram_id == tg_id)
         )
-
-
-async def db_create_user(tg_id: int, username: str | None = None) -> None:
-    async with async_session() as session:
-        user = await session.scalar(
-            select(User).where(User.telegram_id == tg_id)
-        )
-
-        if user:
+        if user_id is not None:
             return
 
         session.add(User(telegram_id=tg_id, username=username))
@@ -28,10 +20,6 @@ async def db_create_user(tg_id: int, username: str | None = None) -> None:
             await session.commit()
         except IntegrityError:
             await session.rollback()
-
-
-async def ensure_user_exists(tg_id: int, username: str | None = None) -> None:
-    await db_create_user(tg_id, username)
 
 
 async def _get_user_id(session, tg_id: int) -> Optional[int]:
