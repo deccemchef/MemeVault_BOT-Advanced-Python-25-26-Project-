@@ -92,18 +92,15 @@ async def memes_get_query(message: Message, state: FSMContext):
     for meme in memes[:5]:  # ограничение, в 5
         if meme.media_type == "photo":
             await message.answer_photo(
-                photo=meme.file_id,
-                caption=meme.caption
+                photo=meme.file_id
             )
         elif meme.media_type == "gif":
             await message.answer_animation(
-                animation=meme.file_id,
-                caption=meme.caption
+                animation=meme.file_id
             )
         elif meme.media_type == "video":
             await message.answer_video(
-                video=meme.file_id,
-                caption=meme.caption
+                video=meme.file_id
             )
 
     # Завершаем состояние
