@@ -13,11 +13,11 @@ from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filte
 
 router = Router()
 
-@router.message()
+"""@router.message()
 async def debug(update: Update):
     chat = update.effective_chat
     print("Тип чата:", chat.type)
-    print("ID чата:", chat.id)
+    print("ID чата:", chat.id)"""
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
