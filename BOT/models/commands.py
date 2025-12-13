@@ -8,16 +8,7 @@ from aiogram.fsm.context import FSMContext
 
 import data_base.requests as rq
 
-from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
-
 router = Router()
-
-"""@router.message()
-async def debug(update: Update):
-    chat = update.effective_chat
-    print("Тип чата:", chat.type)
-    print("ID чата:", chat.id)"""
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
