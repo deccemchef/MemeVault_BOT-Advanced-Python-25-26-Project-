@@ -6,34 +6,16 @@ import models.keyboards as kb
 from models.requests import memes_start
 from aiogram.fsm.context import FSMContext
 
+import data_base.requests as rq
+
 router = Router()
-
-
-def db_get_user(tg_id: int):
-    return None
-
-
-def db_create_user(tg_id: int, username: str | None):
-    pass
-
-
-def db_get_user_favourites(tg_id: int):
-    return []
-
-
-# ее вызываем 2 раза, или в start, или в memes
-def ensure_user_exists(tg_id: int, username: str | None):
-    user = db_get_user(tg_id)
-    if not user:
-        db_create_user(tg_id, username)
-
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     tg_id = message.from_user.id
     username = message.from_user.username
 
-    ensure_user_exists(tg_id, username)
+    await rq.ensure_user_exists(tg_id, username)
 
     await message.answer(text_start, reply_markup=kb.main)
 
@@ -48,9 +30,9 @@ async def cmd_favourites(message: Message):
     tg_id = message.from_user.id
     username = message.from_user.username
 
-    ensure_user_exists(tg_id, username)
+    # await rq.ensure_user_exists(tg_id, username)
 
-    favourites = db_get_user_favourites(tg_id)
+    favourites = await rq.db_get_user_favourites(tg_id)
 
     if not favourites:
         await message.answer(text_no_fav)
@@ -74,6 +56,7 @@ async def btn_help_keyboard(message: Message):
 @router.message(F.text == 'Найти мем')
 async def btn_find_meme(message: Message, state: FSMContext):
     await memes_start(message, state)
+
 
 @router.message(F.text == 'Избранное')
 async def btn_fav_keyboard(message: Message):
