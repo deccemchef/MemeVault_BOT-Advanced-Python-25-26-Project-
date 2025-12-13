@@ -2,12 +2,14 @@ import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 
-
 from models.commands import router
 from models.requests import router as requests_router
 
+from data_base.models import create_tables
+
 
 async def main():
+    await create_tables()
     bot = Bot(token='8422146276:AAE7uckmXcNnnTCEbSS_oWl06xJXHZy748g')
     dp = Dispatcher()
     dp.include_router(router)
