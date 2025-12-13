@@ -1,5 +1,4 @@
 from typing import Optional, List, Dict
-
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
