@@ -3,6 +3,7 @@ from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+import models.keyboards as kb
 
 
 router = Router()
@@ -27,7 +28,7 @@ def generate_ngrams(words):
 
 @router.message(Command("memes"))
 async def memes_start(message: Message, state: FSMContext):
-    await message.answer("Введите текст запроса:")
+    await message.answer("Введите текст запроса:", reply_markup=kb.search_menu)
     await state.set_state(MemeSearchState.waiting_for_query)
 
 

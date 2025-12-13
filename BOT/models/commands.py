@@ -3,7 +3,7 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart, Command
 from constants import text_start, text_help, text_no_fav
 import models.keyboards as kb
-from models.requests import memes_start
+from models.requests import memes_start, cancel
 from aiogram.fsm.context import FSMContext
 
 import data_base.requests as rq
@@ -61,3 +61,12 @@ async def btn_find_meme(message: Message, state: FSMContext):
 @router.message(F.text == 'Избранное')
 async def btn_fav_keyboard(message: Message):
     await cmd_favourites(message)
+
+@router.message(Command('cancel'))
+@router.message(F.text == 'Назад')
+async def cmd_cancel(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer(
+        "Действие отменено.Вы вернулись в главное меню:",
+        reply_markup=kb.main
+    )
