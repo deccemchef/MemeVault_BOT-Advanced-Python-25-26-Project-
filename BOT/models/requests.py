@@ -4,6 +4,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from data_base.models import async_session, Meme, Tag
+from models import keyboards as kb
 from sqlalchemy import select
 
 router = Router()
@@ -47,7 +48,7 @@ async def db_search_memes_by_tags(tag_texts: list[str]) -> list[Meme]:
 
 @router.message(Command("memes"))
 async def memes_start(message: Message, state: FSMContext):
-    await message.answer("Введите текст запроса:")
+    await message.answer("Введите текст запроса:", reply_markup=kb.search_menu)
     await state.set_state(MemeSearchState.waiting_for_query)
 
 
@@ -85,7 +86,7 @@ async def memes_get_query(message: Message, state: FSMContext):
     memes = await db_search_memes_by_tags(ngrams)
 
     if not memes:
-        await message.answer("😕 Ничего не найдено")
+        await message.answer("😕 Ничего не найдено", reply_markup = kb.not_found_menu)
         await state.clear()
         return
 
