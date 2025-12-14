@@ -6,6 +6,7 @@ from aiogram.fsm.state import State, StatesGroup
 from data_base.models import async_session, Meme, Tag
 from models import keyboards as kb
 from sqlalchemy import select
+from aiogram.utils.media_group import MediaGroupBuilder
 
 router = Router()
 
@@ -90,19 +91,17 @@ async def memes_get_query(message: Message, state: FSMContext):
         await state.clear()
         return
 
-    for meme in memes[:5]:  # ограничение, в 5
+    media = MediaGroupBuilder()
+
+    for meme in memes[:5]:
         if meme.media_type == "photo":
-            await message.answer_photo(
-                photo=meme.file_id
-            )
+            media.add_photo(media=meme.file_id)
         elif meme.media_type == "gif":
-            await message.answer_animation(
-                animation=meme.file_id
-            )
+            media.add_animation(media=meme.file_id)
         elif meme.media_type == "video":
-            await message.answer_video(
-                video=meme.file_id
-            )
+            media.add_video(media=meme.file_id)
+
+    await message.answer_media_group(media=media.build())
 
     # Завершаем состояние
     await state.clear()
