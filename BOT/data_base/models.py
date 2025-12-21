@@ -1,25 +1,16 @@
 from typing import Optional, List
 
-from sqlalchemy import (
-    BigInteger,
-    ForeignKey,
-    Integer,
-    String,
-    Text
-)
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    mapped_column,
-    relationship,
-)
-from sqlalchemy.ext.asyncio import (
-    AsyncAttrs,
-    async_sessionmaker,
-    create_async_engine,
+from sqlalchemy import BigInteger, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
+
+from .config import DATABASE_URL, SSL_CONTEXT
+
+engine = create_async_engine(
+    DATABASE_URL,
+    connect_args={"ssl": SSL_CONTEXT},
 )
 
-engine = create_async_engine(url="sqlite+aiosqlite:///db.sqlite3")
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 
