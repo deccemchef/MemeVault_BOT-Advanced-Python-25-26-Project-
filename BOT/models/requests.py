@@ -93,7 +93,7 @@ async def memes_get_query(message: Message, state: FSMContext):
 
     media = MediaGroupBuilder()
 
-    for meme in memes[:6]:
+    for meme in memes[:5]:
         if meme.media_type == "photo":
             media.add_photo(media=meme.file_id)
         elif meme.media_type == "gif":
