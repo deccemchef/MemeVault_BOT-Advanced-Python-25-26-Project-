@@ -87,7 +87,7 @@ async def btn_fav_keyboard(message: Message, state: FSMContext):
 async def cmd_cancel(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
-        "Действие отменено. Ты вернулся в главное меню:",
+        "Ты вернулся в главное меню:",
         reply_markup=kb.main
     )
 
