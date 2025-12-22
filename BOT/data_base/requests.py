@@ -1,8 +1,8 @@
 from typing import Optional, List, Dict
-from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 from constants import MAX_FAV
-
+from sqlalchemy import select, func, delete
+from data_base.models import async_session, Meme, Tag
 from data_base.models import async_session, User, Favorite, Meme
 
 
@@ -83,3 +83,47 @@ async def db_get_favourites(tg_id: int) -> list[Meme]:
             .order_by(Meme.meme_id.desc())
         )
         return res.all()
+
+
+async def db_delete_favourite(tg_id: int, meme_id: int) -> str:
+    async with async_session() as session:
+        user_id = await _get_user_id(session, tg_id)
+        if user_id is None:
+            return "NOUSER"
+
+        result = await session.execute(
+            delete(Favorite).where(
+                Favorite.user_id == user_id,
+                Favorite.meme_id == meme_id
+            )
+        )
+        await session.commit()
+        deleted = getattr(result, "rowcount", 0) or 0
+        return "OK" if deleted > 0 else "NOTFOUND"
+
+
+async def db_search_memes_by_tags(tag_texts, limit, used_ids):
+    if not tag_texts:
+        return []
+
+    tag_texts = [tag.lower() for tag in tag_texts]
+    used_ids = used_ids or []
+
+    async with async_session() as session:
+        new_memes = (
+            select(Meme)
+            .join(Meme.tags)
+            .where(Tag.text.in_(tag_texts))
+        )
+
+        if used_ids:
+            new_memes = new_memes.where(Meme.meme_id.notin_(used_ids))
+
+        new_memes = (
+            new_memes.group_by(Meme.meme_id)
+            .order_by(func.random())
+            .limit(limit)
+        )
+
+        result = await session.scalars(new_memes)
+        return result.all()
