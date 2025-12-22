@@ -29,19 +29,14 @@ not_found_menu = InlineKeyboardMarkup(
 search_controls_kb = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(
-                text="▶️ Следующие мемы",
-                callback_data="search:next"
-            )
+            InlineKeyboardButton(text="⭐ Добавить в избранное", callback_data="search:fav")
         ],
         [
-            InlineKeyboardButton(
-                text="⭐ Добавить в избранное",
-                callback_data="search:fav"
-            )
+            InlineKeyboardButton(text="🔁 Еще мемы", callback_data="search:more")
         ]
     ]
 )
+
 
 favourites_manage_kb = InlineKeyboardMarkup(
     inline_keyboard=[
@@ -60,4 +55,18 @@ def pick_number_kb(n: int) -> InlineKeyboardMarkup:
     buttons = [InlineKeyboardButton(text=str(i), callback_data=f"search:add:{i}") for i in range(1, n + 1)]
     rows = [buttons[:3], buttons[3:]] if n > 3 else [buttons]
     rows.append([InlineKeyboardButton(text="Отмена", callback_data="search:cancel")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def fav_delete_number_kb(n: int) -> InlineKeyboardMarkup:
+    n = max(1, min(n, 10))
+    buttons = [
+        InlineKeyboardButton(text=str(i), callback_data=f"fav:del:{i}")
+        for i in range(1, n + 1)
+    ]
+
+    rows = []
+    for i in range(0, len(buttons), 5):
+        rows.append(buttons[i:i+5])
+
+    rows.append([InlineKeyboardButton(text="Отмена", callback_data="fav:del_cancel")])
     return InlineKeyboardMarkup(inline_keyboard=rows)

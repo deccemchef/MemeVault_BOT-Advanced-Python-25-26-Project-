@@ -7,6 +7,7 @@ from data_base.models import async_session, Meme, Tag
 from models import keyboards as kb
 from sqlalchemy import select
 from aiogram.utils.media_group import MediaGroupBuilder
+from constants import PAGE
 
 router = Router()
 
@@ -87,13 +88,20 @@ async def memes_get_query(message: Message, state: FSMContext):
     memes = await db_search_memes_by_tags(ngrams)
 
     if not memes:
-        await message.answer("😕 Ничего не найдено", reply_markup = kb.not_found_menu)
+        await message.answer("😕 Ничего не найдено", reply_markup=kb.not_found_menu)
         await state.clear()
         return
 
-    media = MediaGroupBuilder()
+    batch = memes[:PAGE]
+    n = len(batch)
 
-    for meme in memes[:5]:
+    await state.update_data(
+        last_batch_count=n,
+        last_batch_ids=[m.meme_id for m in batch],
+    )
+
+    media = MediaGroupBuilder()
+    for meme in batch:
         if meme.media_type == "photo":
             media.add_photo(media=meme.file_id)
         elif meme.media_type == "gif":
@@ -103,5 +111,7 @@ async def memes_get_query(message: Message, state: FSMContext):
 
     await message.answer_media_group(media=media.build())
 
-    # Завершаем состояние
-    await state.clear()
+    await message.answer(
+        "Тебе что-то понравилось? Давай добавим в избранное или посмотрим еще",
+        reply_markup=kb.search_controls_kb,
+    )
