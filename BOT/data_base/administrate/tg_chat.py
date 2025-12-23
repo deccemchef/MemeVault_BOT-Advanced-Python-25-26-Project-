@@ -1,8 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import Message
 from sqlalchemy import select
-
-from data_base.models import async_session, Meme, Tag, MemeTag
+from BOT.data_base.models import async_session, Meme, Tag, MemeTag
 
 router = Router()
 

@@ -3,10 +3,11 @@ from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from models import keyboards as kb
 from aiogram.utils.media_group import MediaGroupBuilder
-from constants import PAGE
-from data_base.requests import db_search_memes_by_tags
+
+from ..keyboards import inline as kb
+from ..constants import PAGE
+from ..data_base.requests import db_search_memes_by_tags
 import secrets
 
 
@@ -98,7 +99,7 @@ async def memes_get_query(message: Message, state: FSMContext):
         if meme.media_type == "photo":
             media.add_photo(media=meme.file_id)
         elif meme.media_type == "gif":
-            media.add_animation(media=meme.file_id)
+            media.add_video(media=meme.file_id)
         elif meme.media_type == "video":
             media.add_video(media=meme.file_id)
 
