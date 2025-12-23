@@ -10,6 +10,7 @@ from aiogram.types import CallbackQuery
 from aiogram.utils.media_group import MediaGroupBuilder
 from constants import PAGE
 import data_base.requests as rq
+from aiogram.exceptions import TelegramBadRequest
 
 router = Router()
 
@@ -98,97 +99,104 @@ async def find_new_meme_attempt_callback(callback: CallbackQuery, state: FSMCont
     await callback.answer()
 
 
-@router.callback_query(F.data == "search:fav")
+@router.callback_query(F.data.startswith("search:fav:"))
 async def fav_show_numbers(cb: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    n = int(data.get("last_batch_count", 0))
+    batch_id = cb.data.split(":")[2]
 
-    if n <= 0:
-        await cb.answer("Сначала нужно вывести мемы", show_alert=True)
+    data = await state.get_data()
+    batches = data.get("batches", {})
+    ids = batches.get(batch_id)
+
+    if not ids:
+        await cb.answer("Этот альбом слишком старый, контекст потерян 😕", show_alert=True)
         return
 
-    await cb.message.edit_reply_markup(reply_markup=kb.pick_number_kb(n))
+    await cb.message.edit_reply_markup(reply_markup=kb.pick_number_kb(len(ids), batch_id))
     await cb.answer()
 
 
-@router.callback_query(F.data == "search:cancel")
+@router.callback_query(F.data.startswith("search:cancel:"))
 async def fav_cancel(cb: CallbackQuery, state: FSMContext):
-    await cb.message.edit_reply_markup(reply_markup=kb.search_controls_kb)
+    batch_id = cb.data.split(":")[2]
+    await cb.message.edit_reply_markup(reply_markup=kb.search_controls_kb(batch_id))
     await cb.answer()
 
 
 @router.callback_query(F.data.startswith("search:add:"))
 async def fav_pick_real(cb: CallbackQuery, state: FSMContext):
-    idx = int(cb.data.split(":")[-1])
+    _, _, batch_id, idx_str = cb.data.split(":")
+    idx = int(idx_str)
 
     data = await state.get_data()
-    batch_ids = data.get("last_batch_ids", [])
+    batches = data.get("batches", {})
+    ids = batches.get(batch_id)
 
-    if not batch_ids or idx < 1 or idx > len(batch_ids):
-        await cb.answer("Повтори поиск", show_alert=True)
+    if not ids or idx < 1 or idx > len(ids):
+        await cb.answer("Контекст потерян 😕", show_alert=True)
         return
 
-    meme_id = batch_ids[idx - 1]
+    meme_id = ids[idx - 1]
     status = await rq.db_add_favourite(cb.from_user.id, meme_id)
 
     if status == "OK":
-        await cb.answer("Добавлено в избранное✅")
-
+        await cb.answer("Добавлено в избранное ✅")
     elif status == "EXISTS":
-        await cb.answer("Уже в избранном🙌")
-
+        await cb.answer("Уже в избранном")
     elif status == "LIMIT":
-        await cb.answer("Лимит избранного 10. Удали что-нибудь😴", show_alert=True)
-
-    # вообще такой ошибки не должно быть, но на всякий случай
+        await cb.answer("Лимит избранного 10. Удали что-нибудь", show_alert=True)
     else:
-        await cb.answer("Пользователь не найден, тыкни start", show_alert=True)
+        await cb.answer("Пользователь не найден (нужно /start)", show_alert=True)
 
-    await cb.message.edit_reply_markup(reply_markup=kb.search_controls_kb)
-
+    # возвращаем обычные кнопки для этого же альбома
+    await cb.message.edit_reply_markup(reply_markup=kb.search_controls_kb(batch_id))
 
 @router.callback_query(F.data == "favourites:delete_menu")
-async def favourites_delete_menu(cb: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    ids = data.get("fav_last_ids", [])
-    n = len(ids)
+async def favourites_delete_menu(cb: CallbackQuery):
+    tg_id = cb.from_user.id
+    favs = await rq.db_get_favourites(tg_id)
 
-    if n <= 0:
-        await cb.answer("Сначала открой избранное", show_alert=True)
+    if not favs:
+        await cb.answer("В избранном пусто 😕", show_alert=True)
         return
 
-    await cb.message.edit_reply_markup(reply_markup=kb.fav_delete_number_kb(n))
+    meme_ids = [m.meme_id for m in favs[:10]]
+
+    try:
+        await cb.message.edit_reply_markup(reply_markup=kb.fav_delete_kb(meme_ids))
+    except TelegramBadRequest:
+        pass
+
     await cb.answer()
 
 
-@router.callback_query(F.data == "fav:del_cancel")
+@router.callback_query(F.data == "favourites:del_cancel")
 async def favourites_delete_cancel(cb: CallbackQuery):
-    await cb.message.edit_reply_markup(reply_markup=kb.favourites_manage_kb)
+    try:
+        await cb.message.edit_reply_markup(reply_markup=kb.favourites_manage_kb)
+    except TelegramBadRequest:
+        pass
     await cb.answer()
 
 
-@router.callback_query(F.data.startswith("fav:del:"))
-async def favourites_delete_pick(cb: CallbackQuery, state: FSMContext):
-    index = int(cb.data.split(":")[-1])
+@router.callback_query(F.data.startswith("favourites:del:"))
+async def favourites_delete_pick(cb: CallbackQuery):
+    tg_id = cb.from_user.id
+    meme_id = int(cb.data.split(":")[-1])
 
-    data = await state.get_data()
-    ids = data.get("fav_last_ids", [])
-
-    if not ids or index < 1 or index > len(ids):
-        await cb.answer("Открой избранное заново", show_alert=True)
-        return
-
-    meme_id = ids[index - 1]
-    status = await rq.db_delete_favourite(cb.from_user.id, meme_id)
+    status = await rq.db_delete_favourite(tg_id, meme_id)
 
     if status == "OK":
-        await cb.answer("Удалено из избранного ✅")
+        await cb.answer("Удалено ✅")
     elif status == "NOTFOUND":
         await cb.answer("Этого мема уже нет в избранном", show_alert=True)
     else:
-        await cb.answer("Пользователь не найден, тыкни start", show_alert=True)
+        await cb.answer("Сначала нажми /start", show_alert=True)
+        return
 
-    await cb.message.edit_reply_markup(reply_markup=kb.favourites_manage_kb)
+    try:
+        await cb.message.edit_reply_markup(reply_markup=kb.favourites_manage_kb)
+    except TelegramBadRequest:
+        pass
 
 
 @router.callback_query(F.data == "search:more")
@@ -196,25 +204,35 @@ async def search_more(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     ngrams = data.get("query_ngrams")
     shown_ids = data.get("shown_ids", [])
+
     if not ngrams:
         await cb.answer("Сначала введи запрос", show_alert=True)
         return
 
     memes = await db_search_memes_by_tags(ngrams, limit=PAGE, used_ids=shown_ids)
     if not memes:
-        await cb.answer("А все, больше нету😕", show_alert=True)
+        await cb.answer("А все, больше нету 😕", show_alert=True)
         return
 
-    package = memes
-    batch_ids = [m.meme_id for m in package]
-    await state.update_data(
-        shown_ids=shown_ids + batch_ids,  # копим те, что уже показали
-        last_batch_count=len(package),
-        last_batch_ids=batch_ids,
-    )
+    batch_ids = [m.meme_id for m in memes]
+    shown_ids = shown_ids + batch_ids
+
+    import secrets
+    batch_id = secrets.token_hex(3)
+
+    batches = data.get("batches", {})
+    batches[batch_id] = batch_ids
+
+    batch_order = data.get("batch_order", [])
+    batch_order.append(batch_id)
+    if len(batch_order) > 70:
+        old = batch_order.pop(0)
+        batches.pop(old, None)
+
+    await state.update_data(shown_ids=shown_ids, batches=batches, batch_order=batch_order)
 
     media = MediaGroupBuilder()
-    for meme in package:
+    for meme in memes:
         if meme.media_type == "photo":
             media.add_photo(media=meme.file_id)
         elif meme.media_type == "gif":
@@ -223,5 +241,45 @@ async def search_more(cb: CallbackQuery, state: FSMContext):
             media.add_video(media=meme.file_id)
 
     await cb.message.answer_media_group(media=media.build())
-    await cb.message.answer("Еще мемчики? 👇", reply_markup=kb.search_controls_kb)
+    await cb.message.answer("Еще мемы 👇", reply_markup=kb.search_controls_kb(batch_id))
     await cb.answer()
+
+
+
+@router.callback_query(F.data == "favourites:clear_ask")
+async def favourites_clear_ask(cb: CallbackQuery):
+    try:
+        await cb.message.edit_reply_markup(reply_markup=kb.favourites_clear_confirm_kb)
+    except TelegramBadRequest:
+        pass
+    await cb.answer()
+
+
+@router.callback_query(F.data == "favourites:clear_cancel")
+async def favourites_clear_cancel(cb: CallbackQuery):
+    try:
+        await cb.message.edit_reply_markup(reply_markup=kb.favourites_manage_kb)
+    except TelegramBadRequest:
+        pass
+    await cb.answer("Отменено")
+
+
+@router.callback_query(F.data == "favourites:clear_confirm")
+async def favourites_clear_confirm(cb: CallbackQuery):
+    deleted = await rq.db_clear_favourites(cb.from_user.id)
+
+    if deleted is None:
+        await cb.answer("Пользователь не найден", show_alert=True)
+        return
+
+    try:
+        await cb.message.edit_reply_markup(reply_markup=None)
+    except TelegramBadRequest:
+        pass
+
+    if deleted == 0:
+        await cb.answer("В избранном уже пусто", show_alert=True)
+        return
+
+    await cb.answer("Очищено ✅")
+    await cb.message.answer(f"Готово! В Избранном больше нет мемов")

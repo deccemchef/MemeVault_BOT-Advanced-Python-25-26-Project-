@@ -87,7 +87,7 @@ async def db_get_favourites(tg_id: int) -> list[Meme]:
 
 async def db_delete_favourite(tg_id: int, meme_id: int) -> str:
     async with async_session() as session:
-        user_id = await _get_user_id(session, tg_id)
+        user_id = await session.scalar(select(User.user_id).where(User.telegram_id == tg_id))
         if user_id is None:
             return "NOUSER"
 
@@ -98,6 +98,7 @@ async def db_delete_favourite(tg_id: int, meme_id: int) -> str:
             )
         )
         await session.commit()
+
         deleted = getattr(result, "rowcount", 0) or 0
         return "OK" if deleted > 0 else "NOTFOUND"
 
@@ -127,3 +128,19 @@ async def db_search_memes_by_tags(tag_texts, limit, used_ids):
 
         result = await session.scalars(new_memes)
         return result.all()
+
+
+async def db_clear_favourites(tg_id: int) -> int | None:
+    async with async_session() as session:
+        user_id = await session.scalar(
+            select(User.user_id).where(User.telegram_id == tg_id)
+        )
+        if user_id is None:
+            return None
+
+        result = await session.execute(
+            delete(Favorite).where(Favorite.user_id == user_id)
+        )
+        await session.commit()
+
+        return (getattr(result, "rowcount", 0) or 0)
