@@ -1,9 +1,9 @@
 from typing import Optional, List, Dict
 from sqlalchemy.exc import IntegrityError
-from constants import MAX_FAV
+from ..constants import MAX_FAV
 from sqlalchemy import select, func, delete
-from data_base.models import async_session, Meme, Tag
-from data_base.models import async_session, User, Favorite, Meme
+from .models import async_session, Meme, Tag
+from .models import async_session, User, Favorite, Meme
 
 
 async def ensure_user_exists(tg_id: int, username: str | None = None) -> None:

@@ -2,11 +2,15 @@ import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 
-from models.commands import router
-from models.requests import router as requests_router
-from data_base.administrate.tg_chat import router as admin_router
+#from models.commands import router
+#from models.requests import router as requests_router
+#from data_base.administrate.tg_chat import router as admin_router
 
-from data_base.models import create_tables
+from .handlers.commands import router
+from .services.meme_service import router as requests_router
+from .data_base.administrate.tg_chat import router as admin_router
+
+from .data_base.models import create_tables
 
 
 async def main():
