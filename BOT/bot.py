@@ -1,6 +1,7 @@
 import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
+from .data_base.config import BOT_TOKEN
 
 from .handlers import *
 from .services import *
@@ -9,7 +10,7 @@ from .data_base import *
 
 async def main():
     await create_tables()
-    bot = Bot(token='8422146276:AAE7uckmXcNnnTCEbSS_oWl06xJXHZy748g')
+    bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
     dp.include_router(router)
     dp.include_router(requests_router)

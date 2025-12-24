@@ -17,7 +17,7 @@ def parse_tags(caption: str) -> list[str]:
         k = t.lower()
         if k not in seen:
             seen.add(k)
-            out.append(t)
+            out.append(k)
     return out
 
 

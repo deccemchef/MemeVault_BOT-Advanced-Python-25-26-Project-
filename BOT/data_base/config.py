@@ -27,3 +27,5 @@ SSL_CONTEXT = ssl.create_default_context(cafile=str(CA_CERT_PATH))
 DATABASE_URL = (
     f"postgresql+asyncpg://{DB_USER}:{quote_plus(DB_PASSWORD)}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
+
+BOT_TOKEN = _require("BOT_TOKEN")
