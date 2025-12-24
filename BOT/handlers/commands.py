@@ -6,13 +6,10 @@ from aiogram.types import CallbackQuery
 from aiogram.utils.media_group import MediaGroupBuilder
 from aiogram.exceptions import TelegramBadRequest
 
-from ..constants import text_start, text_help, text_no_fav, PAGE
-# import models.keyboards as kb
-from ..keyboards import inline as kb
-# from models.requests import memes_start, memes_get_query
-from ..services.meme_service import memes_start, memes_get_query
-from ..data_base import requests as rq
-from ..data_base.requests import db_search_memes_by_tags
+from .. import *
+from ..keyboards import *
+from ..services import *
+from ..data_base import *
 
 router = Router()
 
@@ -110,7 +107,7 @@ async def fav_show_numbers(cb: CallbackQuery, state: FSMContext):
     ids = batches.get(batch_id)
 
     if not ids:
-        await cb.answer("Этот альбом слишком старый, контекст потерян 😕", show_alert=True)
+        await cb.answer("Ты нажал кнопку назад, я все забыл 🐠", show_alert=True)
         return
 
     await cb.message.edit_reply_markup(reply_markup=kb.pick_number_kb(len(ids), batch_id))
@@ -212,7 +209,7 @@ async def search_more(cb: CallbackQuery, state: FSMContext):
         await cb.answer("Сначала введи запрос", show_alert=True)
         return
 
-    memes = await db_search_memes_by_tags(ngrams, limit=PAGE, used_ids=shown_ids)
+    memes = await rq.db_search_memes_by_tags(ngrams, limit=PAGE, used_ids=shown_ids)
     if not memes:
         await cb.answer("А все, больше нету 😕", show_alert=True)
         return
