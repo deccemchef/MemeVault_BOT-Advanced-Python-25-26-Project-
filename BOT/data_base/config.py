@@ -2,17 +2,18 @@ import os
 import ssl
 from pathlib import Path
 from urllib.parse import quote_plus
-
 from dotenv import load_dotenv
 
 DOTENV_PATH = Path(__file__).resolve().parents[1] / ".env"
 load_dotenv(DOTENV_PATH)
+
 
 def _require(name: str) -> str:
     value = os.getenv(name)
     if value is None or value == "":
         raise RuntimeError(f"{name} is not set. Check {DOTENV_PATH}")
     return value
+
 
 DB_HOST = _require("DB_HOST")
 DB_PORT = int(os.getenv("DB_PORT", "6432"))

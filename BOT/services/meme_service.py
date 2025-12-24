@@ -5,11 +5,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.media_group import MediaGroupBuilder
 
-from ..keyboards import inline as kb
+from ..keyboards import *
+from ..data_base import *
 from ..constants import PAGE
-from ..data_base.requests import db_search_memes_by_tags
-import secrets
 
+import secrets
 
 router = Router()
 
@@ -25,7 +25,6 @@ def generate_ngrams(words):
         for end in range(start + 1, n + 1):
             ngrams.append(" ".join(words[start:end]))
     return ngrams
-
 
 
 @router.message(Command("memes"))
@@ -66,17 +65,17 @@ async def memes_get_query(message: Message, state: FSMContext):
     # новый запрос будет хранить все новые айдишники
     shown_ids: list[int] = []
 
-    memes = await db_search_memes_by_tags(ngrams, limit=PAGE, used_ids=shown_ids)
+    memes = await rq.db_search_memes_by_tags(ngrams, limit=PAGE, used_ids=shown_ids)
 
     if not memes:
         await message.answer("😕 Ничего не найдено. Введи другой тег:", reply_markup=kb.search_menu)
-        # состояние не сбрасываем - сможет новый тег писать сразу(просил егор)
+        # состояние не сбрасываем - сможет новый тег писать сразу(просил Егор)
         return
 
     batch_ids = [m.meme_id for m in memes]
     shown_ids = batch_ids.copy()
 
-    #вйдишник для этого альбома
+    # айдишник для этого альбома
     batch_id = secrets.token_hex(3)
 
     batches[batch_id] = batch_ids
@@ -88,9 +87,9 @@ async def memes_get_query(message: Message, state: FSMContext):
         batches.pop(old, None)
 
     await state.update_data(
-        query_ngrams=ngrams,      #еще мемы
+        query_ngrams=ngrams,  # еще мемы
         shown_ids=shown_ids,
-        batches=batches,          # все альбомы (для избранного по старым в том числе)
+        batches=batches,  # все альбомы (для избранного по старым, в том числе)
         batch_order=batch_order,
     )
 
@@ -109,5 +108,3 @@ async def memes_get_query(message: Message, state: FSMContext):
         "Что-то понравилось? Добавь в избранное или посмотри еще😉",
         reply_markup=kb.search_controls_kb(batch_id),
     )
-
-
